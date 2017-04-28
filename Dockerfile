@@ -5,8 +5,8 @@ FROM techdivision/dnmp-debian
 LABEL maintainer "j.zelger@techdivision.com"
 
 # define composer magento repo credentials args and env
-ARG MAGENTO_REPO_USERNAME=5b27ae5bbd2d20951ba6d842683d2359
-ARG MAGENTO_REPO_PASSWORD=8f6002bfded781ef290481d80a75d6ea
+ARG MAGENTO_REPO_USERNAME=
+ARG MAGENTO_REPO_PASSWORD=
 ENV COMPOSER_AUTH="{\"http-basic\": {\"repo.magento.com\": {\"username\": \"$MAGENTO_REPO_USERNAME\", \"password\": \"$MAGENTO_REPO_PASSWORD\"}}}"
 
 # define magento install args
@@ -31,6 +31,7 @@ ARG MAGENTO_INSTALL_USE_SECURE=1
 ARG MAGENTO_INSTALL_USE_SECURE_ADMIN=1
 ARG MAGENTO_INSTALL_SAMPLEDATA=0
 ARG MAGENTO_INSTALL_EDITION="community"
+ARG MAGENTO_INSTALL_VERSION="2.1.6"
 
 # define shortcut envs
 ENV MAGENTO_BIN="php -dmemory_limit=1024M /var/www/dist/bin/magento"
@@ -47,7 +48,7 @@ RUN \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
 
     # create magento
-    composer create-project --repository-url=https://repo.magento.com/ magento/project-$MAGENTO_INSTALL_EDITION-edition /var/www/dist && \
+    composer create-project --repository-url=https://repo.magento.com/ magento/project-$MAGENTO_INSTALL_EDITION-edition=$MAGENTO_INSTALL_VERSION /var/www/dist && \
 
     # setup magento database
     mysql_start && \
