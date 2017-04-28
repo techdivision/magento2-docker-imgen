@@ -44,7 +44,7 @@ If there is already a service listening on port 80 or the others binded to your 
 
 If you're on Mac OS X together with Docker for Mac you have to create that additional local loopback ip as an alias before like this:
 ```bash
-su`o ifconfig lo0 alias 127.0.1.1;
+sudo ifconfig lo0 alias 127.0.1.1;
 ```
 
 Now lets say we want to run a magento2-app conainter with the custom base-url ```magento2-app.dev``` on that additional loopback ip address ```127.0.1.1``` we created before or want to use if we're under linux.
