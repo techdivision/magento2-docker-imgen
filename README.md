@@ -10,7 +10,7 @@ You need to have docker installed and of course... clone this repository.
 ## Usage
 Make sure that you are in the repositories root folder
 
-### Generate an magento2 image
+### Generate a magento2 image
 You can define several build-arg's to configure your image for your needs. Just have a look into the ```Dockerfile``` if you want to know which build-args are available.
 
 Lets say you want to create a magento2 community edition version 2.1.6 with sample-data included. This is how it looks like:
