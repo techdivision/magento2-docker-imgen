@@ -25,7 +25,9 @@ docker build \
     .
 ```
 
-Now you can push that image to your AWS ECR or other private docker registries!
+Now you can push that image to your AWS ECR or other private docker registries.
+
+> If your magento.com account (Access Keys) has access to the enterprise edition you can also generate an image for that!
 
 ### Create a container instance from that image
 When creating a container instance from that generated images you have to define the base-url of magento2 to run with. So you're able to easly run local as well as external magento2-app containers without any further configuration needed after container creation.
