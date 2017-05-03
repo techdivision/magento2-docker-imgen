@@ -1,5 +1,5 @@
 # magento2-docker-imgen
-This is a docker image generator for magento2 based on techdivision/dnmp-debian all in one webstack docker-image. It creates fully runnable magento2 installations with all services (nginx, mysql, redis etc.) included and preconfigured.
+This is a docker image generator for magento2 based on [techdivision/dnmp-debian](https://github.com/techdivision/dnmp-debian) all in one webstack docker-image. It creates fully runnable magento2 installations with all services (nginx, mysql, redis etc.) included and preconfigured.
 
 ## Prerequisites
 First you need to create an account at magento.com
