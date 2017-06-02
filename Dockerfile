@@ -94,5 +94,8 @@ RUN \
 # define entrypoing
 ENTRYPOINT ["/entrypoint.sh"]
 
+# expose available ports
+EXPOSE 80 81 443 3306 5671 5672 6379 9200 9300
+
 # define default cmd
 CMD ["/usr/local/bin/supervisord", "--nodaemon", "-c", "/etc/supervisord.conf"]
