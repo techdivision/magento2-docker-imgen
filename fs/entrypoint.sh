@@ -3,6 +3,7 @@ set -e
 
 # define vars
 MAGENTO_BIN="php /var/www/dist/bin/magento";
+: ${MAGENTO_BASE_URL:="localhost"};
 
 # start mysql
 mysql_start;
