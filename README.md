@@ -16,13 +16,24 @@ You can define several build-arg's to configure your image for your needs. Just 
 Lets say you want to create a magento2 community edition version 2.1.6 with sample-data included. This is how it looks like:
 ```bash
 docker build \
-    --build-arg MAGENTO_INSTALL_EDITION=community \
-    --build-arg MAGENTO_INSTALL_VERSION=2.1.6 \
-    --build-arg MAGENTO_INSTALL_SAMPLEDATA=1 \
     --build-arg MAGENTO_REPO_USERNAME=##YOUR_PUBLIC_ACCESS_KEY## \
     --build-arg MAGENTO_REPO_PASSWORD=##YOUR_PRIVATE_ACCESS_KEY## \
-    -t magento/magento2:ce-2.1.6 \
-    .
+    --build-arg MAGENTO_INSTALL_EDITION=community \
+    --build-arg MAGENTO_INSTALL_VERSION=2.1.8 \
+    --build-arg MAGENTO_INSTALL_SAMPLEDATA=1 \
+    -t magento/community:2.1.8 .
+```
+
+You can also create ```RC``` releases by doing:
+```bash
+docker build \
+    --build-arg MAGENTO_REPO_USERNAME=##YOUR_PUBLIC_ACCESS_KEY## \
+    --build-arg MAGENTO_REPO_PASSWORD=##YOUR_PRIVATE_ACCESS_KEY## \
+    --build-arg MAGENTO_INSTALL_EDITION=community \
+    --build-arg MAGENTO_INSTALL_VERSION=2.2.0-rc20 \
+    --build-arg MAGENTO_INSTALL_STABILITY=RC \
+    --build-arg MAGENTO_INSTALL_SAMPLEDATA=1 \
+    -t magento/community:2.2.0-rc20 .
 ```
 
 Now you can push that image to your AWS ECR or other private docker registries.
@@ -39,7 +50,7 @@ docker run \
     -p 80:80 \
     -p 443:443 \
     -p 3306:3306 \
-    magento/magento2:ce-2.1.6
+    magento/community:2.1.8
 ```
 Wait until everything has booted up and check it on your browser:
 [http://localhost/]()
@@ -53,22 +64,22 @@ If you're on Mac OS X together with Docker for Mac you have to create that addit
 sudo ifconfig lo0 alias 127.0.1.1;
 ```
 
-Now lets say we want to run a magento2-app conainter with the custom base-url ```magento2-app.dev``` on that additional loopback ip address ```127.0.1.1``` we created before or want to use if we're under linux.
+Now lets say we want to run a magento conainter with the custom base-url ```magento.dev``` on that additional loopback ip address ```127.0.1.1``` we created before or want to use if we're under linux.
 
 ```bash
 # add hostname to /etc/hosts file
-echo "127.0.1.1 magento2-app.dev" | sudo tee -a /etc/hosts
+echo "127.0.1.1 magento.dev" | sudo tee -a /etc/hosts
 
 # run docker container
 docker run \
     -p 127.0.1.1:80:80 \
     -p 127.0.1.1:443:443 \
     -p 127.0.1.1:3306:3306 \
-    -e MAGENTO_BASE_URL=magento2-app.dev \
-    magento/magento2:ce-2.1.6
+    -e MAGENTO_BASE_URL=magento.dev \
+    magento/community:2.1.8
 ```
 Wait until everything has booted up and check it on your browser:
-[http://magento2-app.dev/]()
+[http://magento.dev/]()
 
 
 
