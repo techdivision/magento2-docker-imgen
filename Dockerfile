@@ -49,6 +49,7 @@ RUN \
 
     # install prerequisites
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+    composer global require hirak/prestissimo && \
 
     # create magento
     composer create-project --repository-url=https://repo.magento.com/ magento/project-$MAGENTO_INSTALL_EDITION-edition=$MAGENTO_INSTALL_VERSION --stability $MAGENTO_INSTALL_STABILITY /var/www/dist && \
