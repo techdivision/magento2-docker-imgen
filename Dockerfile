@@ -29,15 +29,23 @@ ARG MAGENTO_INSTALL_USE_REWRITES=1
 ARG MAGENTO_INSTALL_USE_SECURE=1
 ARG MAGENTO_INSTALL_USE_SECURE_ADMIN=1
 ARG MAGENTO_INSTALL_SAMPLEDATA=0
+ARG MAGENTO_INSTALL_B2B=0
 ARG MAGENTO_INSTALL_EDITION="community"
 ARG MAGENTO_INSTALL_VERSION="2.1.8"
 ARG MAGENTO_INSTALL_STABILITY="stable"
+ARG MAGENTO_INSTALL_MODE="production"
+ARG MAGENTO_INSTALL_AMQP_HOST="localhost"
+ARG MAGENTO_INSTALL_AMQP_PORT="5672"
+ARG MAGENTO_INSTALL_AMQP_USER="guest"
+ARG MAGENTO_INSTALL_AMQP_PASSSWORD="guest"
+ARG MAGENTO_INSTALL_AMQP_VIRTUALHOST="/"
 
 # define envs
 ENV COMPOSER_AUTH="{\"http-basic\": {\"repo.magento.com\": {\"username\": \"$MAGENTO_REPO_USERNAME\", \"password\": \"$MAGENTO_REPO_PASSWORD\"}}}"
 ENV COMPOSER_NO_INTERACTION=1
 ENV COMPOSER_ALLOW_SUPERUSER=1
-ENV MAGENTO_BIN="php -dmemory_limit=1024M /var/www/dist/bin/magento"
+ENV PROJECT_DIST="/var/www/dist"
+ENV MAGENTO_BIN="php -d memory_limit=2048M $PROJECT_DIST/bin/magento"
 
 # copy fs
 COPY fs /tmp/fs
@@ -52,15 +60,18 @@ RUN \
     composer global require hirak/prestissimo && \
 
     # create magento
-    composer create-project --repository-url=https://repo.magento.com/ magento/project-$MAGENTO_INSTALL_EDITION-edition=$MAGENTO_INSTALL_VERSION --stability $MAGENTO_INSTALL_STABILITY /var/www/dist && \
+    composer create-project --repository-url=https://repo.magento.com/ magento/project-$MAGENTO_INSTALL_EDITION-edition=$MAGENTO_INSTALL_VERSION --stability $MAGENTO_INSTALL_STABILITY $PROJECT_DIST && \
 
-    # setup magento database
+    # start and setup magento database
     mysql_start && \
     echo "GRANT ALL PRIVILEGES ON *.* TO 'magento'@'localhost' IDENTIFIED BY 'magento' WITH GRANT OPTION;"  | mysql --protocol=socket -uroot && \
     echo "CREATE DATABASE magento DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;" | mysql --protocol=socket -uroot && \
 
+    # start rabbitmq
+    /etc/init.d/rabbitmq-server start && \
+
     # install magento
-    php /var/www/dist/bin/magento setup:install \
+    $MAGENTO_BIN setup:install \
         --admin-firstname="$MAGENTO_INSTALL_ADMIN_FIRSTNAME" \
         --admin-lastname="$MAGENTO_INSTALL_ADMIN_LASTNAME" \
         --admin-email="$MAGENTO_INSTALL_ADMIN_EMAIL" \
@@ -79,15 +90,35 @@ RUN \
         --timezone="$MAGENTO_INSTALL_TIMEZONE" \
         --use-rewrites="$MAGENTO_INSTALL_USE_REWRITES" \
         --use-secure="$MAGENTO_INSTALL_USE_SECURE" \
-        --use-secure-admin="$MAGENTO_INSTALL_USE_SECURE_ADMIN" && \
+        --use-secure-admin="$MAGENTO_INSTALL_USE_SECURE_ADMIN" \
+        --amqp-host="$MAGENTO_INSTALL_AMQP_HOST" \
+        --amqp-port="$MAGENTO_INSTALL_AMQP_PORT" \
+        --amqp-user="$MAGENTO_INSTALL_AMQP_USER" \
+        --amqp-password="$MAGENTO_INSTALL_AMQP_PASSWORD" \
+        --amqp-virtualhost="$MAGENTO_INSTALL_AMQP_VIRTUALHOST" && \
+
+    # check if b2b extension should be installed
+    if [ "$MAGENTO_INSTALL_B2B" = 1 ]; then \
+        composer -d=$PROJECT_DIST require magento/extension-b2b; \
+    else \
+        # delete b2b relevant supervisor config files
+        rm -rf /tmp/fs/etc/supervisor.d/magentoQueueConsumer_shared*; \
+    fi && \
 
     # check if sampledata should be deployed
     if [ "$MAGENTO_INSTALL_SAMPLEDATA" = 1 ]; then \
-        $MAGENTO_BIN sampledata:deploy && $MAGENTO_BIN setup:upgrade; \
+        $MAGENTO_BIN sampledata:deploy; \
     fi && \
+
+    # magento setup upgrade
+    $MAGENTO_BIN setup:upgrade && \
+
+    # set magento install mode
+    $MAGENTO_BIN deploy:mode:set $MAGENTO_INSTALL_MODE && \
 
     # tear down
     mysql_stop && \
+    /etc/init.d/rabbitmq-server stop && \
 
     # rollout fs
     cp -r /tmp/fs/. / && \
