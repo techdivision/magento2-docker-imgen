@@ -108,7 +108,7 @@ RUN \
 
     # check if bluefoot extension should be installed
     if [ "$MAGENTO_INSTALL_BLUEFOOT" = 1 ]; then \
-        composer require gene/bluefoot; \
+        composer -d=$PROJECT_DIST require gene/bluefoot; \
     fi && \
 
     # check if sampledata should be deployed
