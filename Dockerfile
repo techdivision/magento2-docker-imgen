@@ -30,6 +30,7 @@ ARG MAGENTO_INSTALL_USE_SECURE=1
 ARG MAGENTO_INSTALL_USE_SECURE_ADMIN=1
 ARG MAGENTO_INSTALL_SAMPLEDATA=0
 ARG MAGENTO_INSTALL_B2B=0
+ARG MAGENTO_INSTALL_BLUEFOOT=0
 ARG MAGENTO_INSTALL_EDITION="community"
 ARG MAGENTO_INSTALL_VERSION="2.2.0"
 ARG MAGENTO_INSTALL_STABILITY="stable"
@@ -103,6 +104,11 @@ RUN \
     else \
         # delete b2b relevant supervisor config files
         rm -rf /tmp/fs/etc/supervisor.d/magentoQueueConsumer_shared*; \
+    fi && \
+
+    # check if bluefoot extension should be installed
+    if [ "$MAGENTO_INSTALL_BLUEFOOT" = 1 ]; then \
+        composer require gene/bluefoot; \
     fi && \
 
     # check if sampledata should be deployed
