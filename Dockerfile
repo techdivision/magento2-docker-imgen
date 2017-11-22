@@ -1,5 +1,5 @@
 # base image
-FROM techdivision/dnmp-debian
+FROM techdivision/dnmp-debian:stretch
 
 # define labels
 LABEL maintainer="j.zelger@techdivision.com"
