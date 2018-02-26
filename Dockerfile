@@ -1,5 +1,5 @@
 # base image
-FROM techdivision/dnmp-debian
+FROM techdivision/dnmp-debian:stretch
 
 # define labels
 LABEL maintainer="j.zelger@techdivision.com"
@@ -32,7 +32,7 @@ ARG MAGENTO_INSTALL_SAMPLEDATA=0
 ARG MAGENTO_INSTALL_B2B=0
 ARG MAGENTO_INSTALL_BLUEFOOT=0
 ARG MAGENTO_INSTALL_EDITION="community"
-ARG MAGENTO_INSTALL_VERSION="2.2.0"
+ARG MAGENTO_INSTALL_VERSION="2.2.1"
 ARG MAGENTO_INSTALL_STABILITY="stable"
 ARG MAGENTO_INSTALL_MODE="production"
 ARG MAGENTO_INSTALL_AMQP_HOST="localhost"
@@ -41,7 +41,14 @@ ARG MAGENTO_INSTALL_AMQP_USER="guest"
 ARG MAGENTO_INSTALL_AMQP_PASSWORD="guest"
 ARG MAGENTO_INSTALL_AMQP_VIRTUALHOST="/"
 
-# define envs
+# define ampq installation append line
+ENV MAGENTO_INSTALL_AMPQ="--amqp-host=$MAGENTO_INSTALL_AMQP_HOST \
+--amqp-port=$MAGENTO_INSTALL_AMQP_PORT \
+--amqp-user=$MAGENTO_INSTALL_AMQP_USER \
+--amqp-password=$MAGENTO_INSTALL_AMQP_PASSWORD \
+--amqp-virtualhost=$MAGENTO_INSTALL_AMQP_VIRTUALHOST"
+
+# define variables
 ENV COMPOSER_AUTH="{\"http-basic\": {\"repo.magento.com\": {\"username\": \"$MAGENTO_REPO_USERNAME\", \"password\": \"$MAGENTO_REPO_PASSWORD\"}}}"
 ENV COMPOSER_NO_INTERACTION=1
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -53,6 +60,9 @@ COPY fs /tmp/fs
 
 # start install routine
 RUN \
+    # disable xdebug extension
+    sed -i '1s/^/;/' /etc/php/7.0/mods-available/xdebug.ini && \
+
     # prepare filesystem
     mkdir /var/www && \
 
@@ -63,13 +73,26 @@ RUN \
     # create magento
     composer create-project --repository-url=https://repo.magento.com/ magento/project-$MAGENTO_INSTALL_EDITION-edition=$MAGENTO_INSTALL_VERSION --stability $MAGENTO_INSTALL_STABILITY $PROJECT_DIST && \
 
+    # deploy fixes for various versions
+    MAGENTO_VERSION_CHECK=$(php -r "echo (version_compare('2.2.0', '${MAGENTO_INSTALL_VERSION}'));") && \
+    # apply sample data patches if version is lower than 2.2.0
+    if [ $? -eq 1 ]; then \
+       cp -r /tmp/fs/var/www/dist/. /var/www/dist/; \
+    fi && \
+
     # start and setup magento database
     mysql_start && \
     echo "GRANT ALL PRIVILEGES ON *.* TO 'magento'@'localhost' IDENTIFIED BY 'magento' WITH GRANT OPTION;"  | mysql --protocol=socket -uroot && \
     echo "CREATE DATABASE magento DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;" | mysql --protocol=socket -uroot && \
 
-    # start rabbitmq
-    /etc/init.d/rabbitmq-server start && \
+    # predefine amqp install line addon
+    INSTALL_AMQP="" && \
+    # enable amqp install params if edition is enterprise
+    if [ "$MAGENTO_INSTALL_EDITION" = "enterprise" ]; then \
+        # start rabbitmq
+        /etc/init.d/rabbitmq-server start; \
+        INSTALL_AMQP="$MAGENTO_INSTALL_AMPQ"; \
+    fi && \
 
     # install magento
     $MAGENTO_BIN setup:install \
@@ -92,11 +115,7 @@ RUN \
         --use-rewrites="$MAGENTO_INSTALL_USE_REWRITES" \
         --use-secure="$MAGENTO_INSTALL_USE_SECURE" \
         --use-secure-admin="$MAGENTO_INSTALL_USE_SECURE_ADMIN" \
-        --amqp-host="$MAGENTO_INSTALL_AMQP_HOST" \
-        --amqp-port="$MAGENTO_INSTALL_AMQP_PORT" \
-        --amqp-user="$MAGENTO_INSTALL_AMQP_USER" \
-        --amqp-password="$MAGENTO_INSTALL_AMQP_PASSWORD" \
-        --amqp-virtualhost="$MAGENTO_INSTALL_AMQP_VIRTUALHOST" && \
+        $INSTALL_AMQP && \
 
     # check if b2b extension should be installed
     if [ "$MAGENTO_INSTALL_B2B" = 1 ]; then \
@@ -124,7 +143,9 @@ RUN \
 
     # tear down
     mysql_stop && \
-    /etc/init.d/rabbitmq-server stop && \
+    if [ "$MAGENTO_INSTALL_EDITION" = "enterprise" ]; then \
+        /etc/init.d/rabbitmq-server stop; \
+    fi && \
 
     # rollout fs
     cp -r /tmp/fs/. / && \
