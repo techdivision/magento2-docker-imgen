@@ -5,6 +5,10 @@ set -e
 MAGENTO_BIN="php /var/www/dist/bin/magento";
 : ${MAGENTO_BASE_URL:="localhost"};
 
+# quickfix for https://github.com/techdivision/magento2-docker-imgen/issues/15 read more about
+# that topic on github under https://github.com/moby/moby/issues/34390
+find /var/lib/mysql/mysql -exec touch -c -a {} +;
+    
 # start mysql
 mysql_start;
 

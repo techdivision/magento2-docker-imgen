@@ -75,10 +75,14 @@ RUN \
 
     # deploy fixes for various versions
     MAGENTO_VERSION_CHECK=$(php -r "echo (version_compare('2.2.0', '${MAGENTO_INSTALL_VERSION}'));") && \
-    # apply sample data patches if version is lower than 2.2.0
+    # apply sample data patches, if version is lower than 2.2.0
     if [ $? -eq 1 ]; then \
        cp -r /tmp/fs/var/www/dist/. /var/www/dist/; \
     fi && \
+
+    # quickfix for https://github.com/techdivision/magento2-docker-imgen/issues/15 read more about
+    # that topic on github under https://github.com/moby/moby/issues/34390
+    find /var/lib/mysql/mysql -exec touch -c -a {} + && \
 
     # start and setup magento database
     mysql_start && \
@@ -125,8 +129,9 @@ RUN \
         rm -rf /tmp/fs/etc/supervisor.d/magentoQueueConsumer_shared*; \
     fi && \
 
-    # check if bluefoot extension should be installed
-    if [ "$MAGENTO_INSTALL_BLUEFOOT" = 1 ]; then \
+    # check if bluefoot extension should be installed, only if version is lower than 2.3.0
+    MAGENTO_VERSION_CHECK=$(php -r "echo (version_compare('2.3.0', '${MAGENTO_INSTALL_VERSION}'));") && \
+    if [ "$MAGENTO_INSTALL_BLUEFOOT" = 1 ] && [ $? -eq 1 ]; then \
         composer -d=$PROJECT_DIST require gene/bluefoot; \
     fi && \
 
