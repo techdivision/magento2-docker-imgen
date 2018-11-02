@@ -40,6 +40,7 @@ ARG MAGENTO_INSTALL_AMQP_PORT="5672"
 ARG MAGENTO_INSTALL_AMQP_USER="guest"
 ARG MAGENTO_INSTALL_AMQP_PASSWORD="guest"
 ARG MAGENTO_INSTALL_AMQP_VIRTUALHOST="/"
+ARG PHP_VERSION="7.0"
 
 # define ampq installation append line
 ENV MAGENTO_INSTALL_AMPQ="--amqp-host=$MAGENTO_INSTALL_AMQP_HOST \
@@ -60,8 +61,11 @@ COPY fs /tmp/fs
 
 # start install routine
 RUN \
+    # define default php cli version
+    update-alternatives --set php /usr/bin/php${PHP_VERSION} && \
+
     # disable xdebug extension
-    sed -i '1s/^/;/' /etc/php/7.0/mods-available/xdebug.ini && \
+    sed -i '1s/^/;/' /etc/php/${PHP_VERSION}/mods-available/xdebug.ini && \
 
     # prepare filesystem
     mkdir /var/www && \
@@ -157,7 +161,11 @@ RUN \
 
     # cleanup
     rm -rf /tmp/* && \
-    rm -rf /etc/nginx/conf.d/default.conf
+    rm -rf /etc/nginx/conf.d/default.conf && \
+
+    # setup php-fpm to use defined version
+    sed -i "s/php-fpm.sock/php${PHP_VERSION}-fpm.sock/g" /etc/nginx/conf.d/magento.conf
+
 
 # define entrypoing
 ENTRYPOINT ["/entrypoint.sh"]
