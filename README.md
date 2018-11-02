@@ -24,6 +24,19 @@ docker build \
     -t magento/community:2.1.8 .
 ```
 
+If you want to use another PHP Version just define it as build-arg like this:
+```bash
+docker build \
+    --build-arg MAGENTO_REPO_USERNAME=##YOUR_PUBLIC_ACCESS_KEY## \
+    --build-arg MAGENTO_REPO_PASSWORD=##YOUR_PRIVATE_ACCESS_KEY## \
+    --build-arg MAGENTO_INSTALL_EDITION=community \
+    --build-arg MAGENTO_INSTALL_VERSION=2.2.5 \
+    --build-arg MAGENTO_INSTALL_SAMPLEDATA=1 \
+    --build-arg PHP_VERSION=7.1 \
+    -t magento/community:2.2.5-php7.1 .
+```
+
+
 You can also create ```RC``` releases by doing:
 ```bash
 docker build \
